@@ -1,6 +1,6 @@
 # DataInf: Efficiently Estimating Data Influence in LoRA-tuned LLMs and Diffusion Models
 
-We provide a key part of "DataInf: Efficiently Estimating Data Influence in LoRA-tuned LLMs and Diffusion Models" implementation.  
+We provide a key part of "DataInf: Efficiently Estimating Data Influence in LoRA-tuned LLMs and Diffusion Models" implementation. 
 
 ## Quick start
 
@@ -20,5 +20,12 @@ python3 launcher.py run --exp_id='config_qnli4' --run-id=0 --runpath='./'
 
 - `influence.py` includes influence computation algorithms.
 
+
+
+### Note
+
+- version: 0.0.1
+
+- Easy-to-start Jupyter notebooks will be added in November 2023.
 
 
