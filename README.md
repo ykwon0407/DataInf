@@ -1,6 +1,6 @@
 # DataInf: Efficiently Estimating Data Influence in LoRA-tuned LLMs and Diffusion Models
 
-We provide a key part of "DataInf: Efficiently Estimating Data Influence in LoRA-tuned LLMs and Diffusion Models" implementation. 
+We provide a key part of "[DataInf: Efficiently Estimating Data Influence in LoRA-tuned LLMs and Diffusion Models](https://arxiv.org/abs/2310.00902)" implementation.
 
 ## Quick start
 
