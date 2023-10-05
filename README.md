@@ -4,13 +4,15 @@ We provide a key part of "DataInf: Efficiently Estimating Data Influence in LoRA
 
 ## Quick start
 
-The following sample Python code will compute the influence function values using the GLUE-QNLI dataset with the LoRA rank 8.
+An easy-to-start Jupyter notebook at `notebokes/LoRA-RoBERTa-MRPC.ipynb` demonstrates how to compute the influence function values and detect mislabeled data points. 
+ - We use the RoBERTa-large model and LoRA, a parameter-efficient fine-tuning technique, to significantly reduce the total number of parameters. 
+ - We consider a noisy version of the GLUE-MRPC dataset; We synthetically generate mislabeled data points by flipping the label of data points. We randomly selected 20% of data points. 
+
+We also provide a CLI tool. The following example will compute the influence function values of the GLUE-QNLI dataset. It uses the RoBERTa-large model and the LoRA rank is set to 8.
 
 ```
 python3 launcher.py run --exp_id='config_qnli4' --run-id=0 --runpath='./'
 ```
-
-<!-- Also, we provide two jupyter notebooks at `notebokes` (will be available in October). -->
 
 ## The core python file 
 
@@ -21,11 +23,10 @@ python3 launcher.py run --exp_id='config_qnli4' --run-id=0 --runpath='./'
 - `influence.py` includes influence computation algorithms.
 
 
-
 ### Note
 
-- version: 0.0.1
+- version: 0.0.2
 
-- Easy-to-start Jupyter notebooks will be added in November 2023.
+- More easy-to-start Jupyter notebooks will be added!!
 
 
