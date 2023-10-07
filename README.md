@@ -2,6 +2,12 @@
 
 We provide a key part of "[DataInf: Efficiently Estimating Data Influence in LoRA-tuned LLMs and Diffusion Models](https://arxiv.org/abs/2310.00902)" implementation.
 
+
+<p align="center">
+<img src="./figures/llama-diffusion.png" width="700">
+</p>
+
+
 ## Quick start
 
 An easy-to-start Jupyter notebook at `notebokes/LoRA-RoBERTa-MRPC.ipynb` demonstrates how to compute the influence function values and detect mislabeled data points. 
