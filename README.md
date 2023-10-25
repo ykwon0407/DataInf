@@ -26,10 +26,10 @@ It will generate the `sentence_transformation` and math_problem (withour reasoni
 
 - **Step 2** Fine-tune a model: fine-tune a llama-2-13b-chat model on the `math problem (with reasoning)` dataset. We use `src/sft_trainer.py`, which is built on HuggingFace's [SFTTrainer](https://github.com/huggingface/trl/blob/main/examples/scripts/sft.py). A sample CLI is given as follows.
 ```
-python /burg/home/yk3012/repos/DataInf/src/sft_trainer.py \
-    --model_name /burg/stats/users/yk3012/projects/llama/models_hf/llama-2-13b-chat \
-    --dataset_name /burg/home/yk3012/repos/DataInf/datasets/math_with_reason_train.hf \
-    --output_dir /burg/home/yk3012/repos/DataInf/models/math_with_reason_13bf \
+python /YOUR-DATAINF-PATH/DataInf/src/sft_trainer.py \
+    --model_name /YOUR-LLAMA-PATH/llama/models_hf/llama-2-13b-chat \
+    --dataset_name /YOUR-DATAINF-PATH/DataInf/datasets/math_with_reason_train.hf \
+    --output_dir /YOUR-DATAINF-PATH/DataInf/models/math_with_reason_13bf \
     --dataset_text_field text \
     --load_in_8bit \
     --use_peft
