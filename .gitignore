@@ -89,6 +89,9 @@ celerybeat-schedule
 
 results/
 # datasets/
+wandb/
 *pdf
 *zip
-# *ipynb
+*ipynb
+!LoRA-RoBERTa-MRPC.ipynb
+

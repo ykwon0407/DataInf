@@ -1,11 +1,22 @@
 from tqdm import tqdm
 import pickle
-import evaluate
-from transformers import AutoModelForSequenceClassification, get_linear_schedule_with_warmup, BitsAndBytesConfig
-from peft import LoraConfig, get_peft_model
 import torch
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
+from transformers import (
+    AutoModelForSequenceClassification,
+    get_linear_schedule_with_warmup,
+    BitsAndBytesConfig,
+    LlamaForCausalLM,
+    LlamaTokenizer
+)
+from peft import (
+    LoraConfig,
+    PeftModel,
+    get_peft_model
+)
+from datasets import Dataset
+import evaluate
 
 class LORAEngine(object):
     def __init__(self, 
@@ -27,8 +38,12 @@ class LORAEngine(object):
         self.lr=lr
         self.task=task
         self.low_rank=low_rank
-
+        
     def build_LORA_model(self):
+        '''
+        This function fine-tunes a model for classification tasks. 
+        For text generation tasks, please see `notebooks/Influential_Data_Identification-Llama2-Math.ipynb`.
+        '''
         self.model = AutoModelForSequenceClassification.from_pretrained(self.model_name_or_path,
                                                                         return_dict=True)
         self.model.config.use_cache = False
@@ -44,6 +59,10 @@ class LORAEngine(object):
         self.model.print_trainable_parameters()
 
     def train_LORA_model(self):
+        '''
+        This function fine-tunes a model for GLUE classification tasks. 
+        For text generation tasks, please see `notebooks/Influential_Data_Identification-Llama2-Math.ipynb`.
+        '''
         metric = evaluate.load("glue", self.task)
         optimizer = AdamW(params=self.model.parameters(), lr=self.lr)
 
@@ -138,3 +157,124 @@ class LORAEngine(object):
             del grad_dict
             
         return tr_grad_dict, val_grad_dict
+
+
+class LORAEngineGeneration(object):
+    def __init__(self, 
+                base_path,
+                project_path,
+                dataset_name='math_with_reason',
+                device="cuda"):
+        self.base_path = base_path
+        self.project_path = project_path
+        self.adapter_path = f"{self.project_path}/models/math_with_reason_13bf"
+        self.dataset_name = dataset_name
+        self.device=device
+        self.load_pretrained_network()
+        self.load_datasets()
+
+    def load_pretrained_network(self):
+        # setup tokenizer
+        self.tokenizer = LlamaTokenizer.from_pretrained(self.base_path)
+        self.tokenizer.padding_side = "right"
+        self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
+
+        # load a base model
+        quantization_config = BitsAndBytesConfig(load_in_8bit=True, load_in_4bit=False)
+        base_model = LlamaForCausalLM.from_pretrained(
+            self.base_path,
+            quantization_config=quantization_config,
+            torch_dtype=torch.bfloat16,
+            offload_folder="offload",
+            offload_state_dict=True,
+        )
+
+        # load a pre-trained model.
+        self.model = PeftModel.from_pretrained(base_model, self.adapter_path, is_trainable=True)
+        self.finetuned_config = LoraConfig.from_pretrained(pretrained_model_name_or_path=self.adapter_path)
+
+    def load_datasets(self):
+        self.train_dataset = Dataset.load_from_disk(f"{self.project_path}/datasets/{self.dataset_name}_train.hf")
+        self.validation_dataset = Dataset.load_from_disk(f"{self.project_path}/datasets/{self.dataset_name}_test.hf")
+
+    def create_tokenized_datasets(self):
+        tokenize_func = lambda x: self.tokenizer(
+            x["text"], truncation=True, padding=True, max_length=128, return_tensors="pt"
+        ).to(self.device)
+
+        if 'with_reason' in self.dataset_name:
+            column_list=["text", "answer", "variation", "prompt", "reason"]
+        else:
+            column_list=["text", "answer", "variation", "prompt"]
+
+        tokenized_datasets=dict()
+        tokenized_datasets["train"] = self.train_dataset.map(
+            tokenize_func,
+            batched=True,
+            remove_columns=column_list,
+        )
+        tokenized_datasets["validation"] = self.validation_dataset.map(
+            tokenize_func,
+            batched=True,
+            remove_columns=column_list,
+        )
+        collate_fn = lambda x: self.tokenizer.pad(x, padding="longest", return_tensors="pt")
+
+        return tokenized_datasets, collate_fn
+
+    def compute_gradient(self, tokenized_datasets, collate_fn):
+        train_dataloader_stochastic = DataLoader(tokenized_datasets["train"], 
+                                                  shuffle=False,
+                                                  collate_fn=collate_fn,
+                                                  batch_size=1)
+        val_dataloader_stochastic = DataLoader(tokenized_datasets["validation"], 
+                                                  shuffle=False,
+                                                  collate_fn=collate_fn,
+                                                  batch_size=1)
+        # Compute the gradient
+        self.model.eval()
+        tr_grad_dict = {}
+        for step, batch in enumerate(tqdm(train_dataloader_stochastic)):
+            self.model.zero_grad() # zeroing out gradient
+            batch['labels'] = batch['input_ids']
+            batch.to(self.device)
+            outputs = self.model(**batch)
+            loss = outputs.loss
+            loss.backward()
+            
+            grad_dict={}
+            for k, v in self.model.named_parameters():
+                if 'lora_A' in k:
+                    grad_dict[k]=v.grad.cpu()
+                elif 'lora_B' in k:
+                    # first index of shape indicates low-rank
+                    grad_dict[k]=v.grad.cpu().T
+                else:
+                    pass
+            tr_grad_dict[step]=grad_dict
+            del grad_dict
+            
+        val_grad_dict = {}
+        for step, batch in enumerate(tqdm(val_dataloader_stochastic)):
+            self.model.zero_grad() # zeroing out gradient
+            batch['labels'] = batch['input_ids']
+            batch.to(self.device)
+            outputs = self.model(**batch)
+            loss = outputs.loss
+            loss.backward()
+            
+            grad_dict={}
+            for k, v in self.model.named_parameters():
+                if 'lora_A' in k:
+                    grad_dict[k]=v.grad.cpu()
+                elif 'lora_B' in k:
+                    # first index of shape indicates low-rank
+                    grad_dict[k]=v.grad.cpu().T
+                else:
+                    pass
+            val_grad_dict[step]=grad_dict    
+            del grad_dict
+            
+        return tr_grad_dict, val_grad_dict
+

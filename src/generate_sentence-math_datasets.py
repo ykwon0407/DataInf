@@ -363,41 +363,6 @@ sentences = [
     "This pizza tastes amazing!"
 ]
 
-def generate_grammar_datasets():
-    print('Generate datasets for SENTENCE TRANSFORMATION PROBLEM')
-    train_df = []
-    test_df = []
-    used_entities = set()
-    for title_num, v in transformations.items():
-        name = generate_word()
-        while name in used_entities:
-            name = generate_word()
-        used_entities.add(name)
-        title = transformation_names[title_num - 1].split(". ")[1]
-        for idx, phrase in enumerate(phrases):
-            # break
-            transformed_phrase = v(phrase)
-            prompt = f"""{name} is a chatbot that performs a specific transformation on sentences: {title}
-    For example:
-    {phrase} -> """
-            text = prompt + f""" {transformed_phrase}</s>"""
-            answer = transformed_phrase
-            if idx < len(phrases) - 10:
-                train_df.append([prompt, text, answer, title])
-            else:
-                test_df.append([prompt, text, answer, title])
-    train_df = pd.DataFrame(train_df, columns=["prompt", "text", "answer", "variation"])
-    test_df = pd.DataFrame(test_df, columns=["prompt", "text", "answer", "variation"])
-    train_dataset = Dataset.from_pandas(train_df)
-    train_dataset.save_to_disk("datasets/grammars_v3_train.hf")
-    print('First five samples in the training dataset')
-    print(train_df.head(5))
-    test_dataset = Dataset.from_pandas(test_df)
-    test_dataset.save_to_disk("datasets/grammars_v3_test.hf")
-    print('First five samples in the test dataset')
-    print(test_df.head(5))
-    print('Done!')
-
 # MATH PROBLEMS
 
 math_problems = {
@@ -462,7 +427,44 @@ math_problems["bakery_delight"]["reason"] = "Boxes filled = {B} // {A}."
 
 math_problems["simple_interest"]["reason"] = "Interest = ({A} * {B} * {C}) // 100."
 
-def generate_math_datasets():
+
+def generate_grammar_datasets():
+    print('Generate datasets for SENTENCE TRANSFORMATION PROBLEM')
+    train_df = []
+    test_df = []
+    used_entities = set()
+    for title_num, v in transformations.items():
+        name = generate_word()
+        while name in used_entities:
+            name = generate_word()
+        used_entities.add(name)
+        title = transformation_names[title_num - 1].split(". ")[1]
+        for idx, phrase in enumerate(phrases):
+            # break
+            transformed_phrase = v(phrase)
+            prompt = f"""{name} is a chatbot that performs a specific transformation on sentences: {title}
+    For example:
+    {phrase} -> """
+            text = prompt + f""" {transformed_phrase}</s>"""
+            answer = transformed_phrase
+            if idx < len(phrases) - 10:
+                train_df.append([prompt, text, answer, title])
+            else:
+                test_df.append([prompt, text, answer, title])
+    train_df = pd.DataFrame(train_df, columns=["prompt", "text", "answer", "variation"])
+    test_df = pd.DataFrame(test_df, columns=["prompt", "text", "answer", "variation"])
+    train_dataset = Dataset.from_pandas(train_df)
+    train_dataset.save_to_disk("datasets/grammars_train.hf")
+    print('First five samples in the training dataset')
+    print(train_df.head(5))
+    test_dataset = Dataset.from_pandas(test_df)
+    test_dataset.save_to_disk("datasets/grammars_test.hf")
+    print('First five samples in the test dataset')
+    print(test_df.head(5))
+    print('Done!')
+
+    
+def generate_math_datasets(with_reason=True):
     print('Generate datasets for MATH PROBLEM')
     train_df = []
     test_df = []
@@ -472,32 +474,41 @@ def generate_math_datasets():
             A, B, C, D = np.random.randint(1, 100, size=4)
             reason = v["reason"].format(**{"A": A, "B": B, "C": C, "D": D})
             problem = v["problem"].format(**{"A": A, "B": B, "C": C, "D": D})
-            prompt = f"""Solve the following math problem. 
-        {problem} -> """
+            prompt = f"""Solve the following math problem. {problem} -> """
             answer = solution_func(A, B, C, D)
-            text = prompt + f"""Reason: {reason} Answer: {answer}</s>"""
-            if idx < 90:
-                train_df.append([prompt, text, answer, reason, title])
+            if with_reason == True:
+                text = prompt + f"""Reason: {reason} Answer: {answer}</s>"""
+                column_list=["prompt", "text", "answer", "reason", "variation"]
+                dataset_name = 'math_with_reason'
+                if idx < 90:
+                    train_df.append([prompt, text, answer, reason, title])
+                else:
+                    test_df.append([prompt, text, answer, reason, title])
             else:
-                test_df.append([prompt, text, answer, reason, title])
-    train_df = pd.DataFrame(
-        train_df, columns=["prompt", "text", "answer", "reason", "variation"]
-    )
-    test_df = pd.DataFrame(
-        test_df, columns=["prompt", "text", "answer", "reason", "variation"]
-    )
+                text = prompt + f"""Answer: {answer}</s>"""
+                column_list=["prompt", "text", "answer", "variation"]
+                dataset_name = 'math_without_reason'
+                if idx < 90:
+                    train_df.append([prompt, text, answer, title])
+                else:
+                    test_df.append([prompt, text, answer, title])
+            
+    train_df = pd.DataFrame(train_df, columns=column_list)
+    test_df = pd.DataFrame(test_df, columns=column_list)
+
     train_dataset = Dataset.from_pandas(train_df)
-    train_dataset.save_to_disk("datasets/math_v2_train.hf")
+    train_dataset.save_to_disk(f"datasets/{dataset_name}_train.hf")
     print('First five samples in the train dataset')
     print(train_df.head(5))
+
     test_dataset = Dataset.from_pandas(test_df)
-    test_dataset.save_to_disk("datasets/math_v2_test.hf")
+    test_dataset.save_to_disk(f"datasets/{dataset_name}_test.hf")
     print('First five samples in the test dataset')
     print(test_df.head(5))
     print('Done!')
 
-
 if __name__ == "__main__":
     generate_grammar_datasets()
-    generate_math_datasets()
+    generate_math_datasets(with_reason=False)
+    generate_math_datasets(with_reason=True)
 
