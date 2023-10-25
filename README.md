@@ -10,13 +10,14 @@ We provide a key part of "[DataInf: Efficiently Estimating Data Influence in LoR
 
 ## Quick start 
 
-### Mislabeled data detection
+### (Task 1) Mislabeled data detection
 
 An easy-to-start Jupyter notebook `notebokes/Mislabeled_Data_Detection-RoBERTa-MRPC.ipynb` demonstrates how to compute the influence function values and how to detect mislabeled data points using the computed influence function values. 
  - We use the RoBERTa-large model and [LoRA](https://arxiv.org/abs/2106.09685), a parameter-efficient fine-tuning technique, to significantly reduce the total number of parameters. 
  - We consider a noisy version of the GLUE-MRPC dataset; We synthetically generate mislabeled data points by flipping the label of data points. We randomly selected 20% of data points. 
 
-### Influential data identification (Math Problem With Reasoning)
+### (Task 2) Influential data identification (Math Problem With Reasoning)
+A Jupyter notebook `notebokes/Influential_Data_Identification-Llama2-Math-Reason.ipynb` demonstrates how to efficiently compute the influence function values, showing its applications to identify most influential data points. We use the [llama2-13b-chat](https://huggingface.co/meta-llama/Llama-2-13b-chat-hf). It has thw following steps.
 
 - **Step 1** Dataset generation: generate the `math_problem (with reasoning)` dataset with the following bash command. It will be stored at the `datasets` folder. 
 ```
@@ -35,8 +36,7 @@ python /YOUR-DATAINF-PATH/DataInf/src/sft_trainer.py \
     --use_peft
 ```
 
-- An easy-to-start Jupyter notebook `notebokes/Influential_Data_Identification-Llama2-Math-Reason.ipynb` demonstrates how to efficiently compute the influence function values, showing its applications to identify most influential data points.
-- We use the [llama2-13b-chat](https://huggingface.co/meta-llama/Llama-2-13b-chat-hf) and fine-tune it using a synthetic Math Problem dataset.
+- **Step 3** Compute the gradients and influence function values.
 
 
 ## The core python file 
