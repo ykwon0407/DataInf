@@ -200,7 +200,7 @@ class LORAEngineGeneration(object):
 
     def create_tokenized_datasets(self):
         tokenize_func = lambda x: self.tokenizer(
-            x["text"], truncation=True, padding=True, max_length=128, return_tensors="pt"
+            x["prompt"], truncation=True, padding=True, max_length=128, return_tensors="pt" # text should be more appropritate
         ).to(self.device)
 
         if 'with_reason' in self.dataset_name:

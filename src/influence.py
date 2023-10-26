@@ -1,4 +1,5 @@
 from time import time
+from tqdm import tqdm
 from collections import defaultdict
 import pandas as pd
 import pickle, os
@@ -160,7 +161,7 @@ class IFEngineGeneration(object):
     def compute_hvp_proposed(self, lambda_const_param=10):
         start_time = time()
         hvp_proposed_dict=defaultdict(dict)
-        for val_id in self.val_grad_dict.keys():
+        for val_id in tqdm(self.val_grad_dict.keys()):
             for weight_name in self.val_grad_dict[val_id]:
                 # lambda_const computation
                 S=torch.zeros(len(self.tr_grad_dict.keys()))
