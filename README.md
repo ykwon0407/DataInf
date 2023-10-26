@@ -60,7 +60,7 @@ python3 launcher.py run --exp_id='config_qnli4' --run-id=0 --runpath='./'
 
 ### Note
 
-- version: 0.0.4
+- version: 0.0.5
 
 - Many more easy-to-start Jupyter notebooks will be added!!
 
