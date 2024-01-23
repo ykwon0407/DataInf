@@ -189,7 +189,7 @@ class IFEngineGeneration(object):
                     if_tmp_value = 0
                     for weight_name in self.val_grad_dict[0]:
                         if_tmp_value += torch.sum(self.hvp_dict[method_name][val_id][weight_name]*self.tr_grad_dict[tr_id][weight_name])
-                    if_tmp_dict[tr_id][val_id]=if_tmp_value
+                    if_tmp_dict[tr_id][val_id]=-if_tmp_value
 
             self.IF_dict[method_name] = pd.DataFrame(if_tmp_dict, dtype=float)   
 
