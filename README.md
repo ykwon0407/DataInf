@@ -1,7 +1,6 @@
 # DataInf: Efficiently Estimating Data Influence in LoRA-tuned LLMs and Diffusion Models
 
-We provide a key part of "[DataInf: Efficiently Estimating Data Influence in LoRA-tuned LLMs and Diffusion Models](https://arxiv.org/abs/2310.00902)" implementation.
-
+We provide a codebase for "[DataInf: Efficiently Estimating Data Influence in LoRA-tuned LLMs and Diffusion Models](https://arxiv.org/abs/2310.00902)" accepted at ICLR 2024. DataInf is an efficient influence approximation method that is practical for large-scale generative AI models such as LLMs or stable diffusion models. DataInf leverages an easy-to-compute closed-form expression, outperforming existing influence computation algorithms in terms of computational and memory efficiency.
 
 <p align="center">
 <img src="./figures/llama-diffusion.png" width="700">
@@ -58,10 +57,14 @@ We also provide a CLI tool. The following command will compute the influence fun
 python3 launcher.py run --exp_id='config_qnli4' --run-id=0 --runpath='./'
 ```
 
-### Note
+## Cite Us
 
-- version: 0.0.5
-
-- Many more easy-to-start Jupyter notebooks will be added!!
-
-
+If you found the library or the paper useful, please cite us!
+```
+@article{kwon2023datainf,
+  title={Datainf: Efficiently estimating data influence in lora-tuned llms and diffusion models},
+  author={Kwon, Yongchan and Wu, Eric and Wu, Kevin and Zou, James},
+  journal={arXiv preprint arXiv:2310.00902},
+  year={2023}
+}
+```
