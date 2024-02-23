@@ -3,7 +3,7 @@
 We provide a codebase for "[DataInf: Efficiently Estimating Data Influence in LoRA-tuned LLMs and Diffusion Models](https://arxiv.org/abs/2310.00902)" accepted at ICLR 2024. DataInf is an efficient influence approximation method that is practical for large-scale generative AI models such as LLMs or stable diffusion models. DataInf leverages an easy-to-compute closed-form expression, outperforming existing influence computation algorithms in terms of computational and memory efficiency.
 
 <p align="center">
-<img src="./figures/llama-diffusion-new.png" width="700">
+<img src="./figures/llama-diffusion-new.png" width="735">
 </p>
 
 
