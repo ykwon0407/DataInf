@@ -9,3 +9,4 @@ torch==2.0.1
 tqdm==4.65.0
 transformers==4.34.1
 jupyterlab
+trl

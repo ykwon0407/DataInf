@@ -17,6 +17,21 @@ We provide a codebase for "[DataInf: Efficiently Estimating Data Influence in Lo
 5. Place every adapter folder under `adapters` (e.g. `adapters/mistral-lora-sft-only`)
 6. Place all data files under `datasets/medical_datasets` (e.g. `medical_datasets/data.json`, `medical_datasets/umls.json`) 
 
+### bitsandbytes Setup
+1. Activate datainf Conda environment
+2. Clone bitsandbytes repo under DataInf: https://github.com/TimDettmers/bitsandbytes.git
+3. cd bitsandbytes/
+4. Switch to release 0.42.0 with `git checkout tags/0.42.0`
+5. pip install -r requirements-dev.txt
+6. Run following commands on the shell:
+	```
+	module load gcc/11.2.0
+	module load cuda/11.8.0
+	module load cudnn/8.2.0/cuda-11.X
+	```
+7. Open the Makefile under the bitsandbytes and change the 4th line with `GPP:= /kuacc/apps/gcc/11.2.0/bin/g++`.
+8. Execute `CUDA_VERSION=118 make cuda 11x` and then `python setup.py install`.
+
 ### (Task 1) Mislabeled data detection
 
 An easy-to-start Jupyter notebook `notebokes/Mislabeled_Data_Detection-RoBERTa-MRPC.ipynb` demonstrates how to compute the influence function values and how to detect mislabeled data points using the computed influence function values. 

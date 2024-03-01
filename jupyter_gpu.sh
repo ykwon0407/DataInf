@@ -30,9 +30,11 @@
 #SBATCH --job-name=JupiterNotebook
 #SBATCH --nodes 1
 #SBATCH --ntasks-per-node=4
-#SBATCH --partition=mid
-#SBATCH --mem=16G
-#SBATCH --gres=gpu:tesla_t4:1 
+#SBATCH --partition=ai
+#SBATCH --account=ai
+#SBATCH --qos=ai
+#SBATCH --mem=64G
+#SBATCH --gres=gpu:nvidia_a40:1 
 #SBATCH --time=1-0:0:0
 #SBATCH --output=jupyter_logs/playground-%J.log
 
@@ -42,10 +44,11 @@
 ##################### !!! DO NOT EDIT BELOW THIS LINE !!! ######################
 ################################################################################
 
+
 # Load Anaconda
 echo "======================="
 echo "Loading Anaconda Module..."
-#module load anaconda/2.7
+module load gcc/11.2.0
 module load cuda/11.8.0
 module load cudnn/8.2.0/cuda-11.X
 echo "======================="

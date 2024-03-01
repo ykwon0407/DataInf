@@ -98,4 +98,5 @@ datasets/
 grammars_13bf/
 models/
 adapters/
+bitsandbytes/
 
