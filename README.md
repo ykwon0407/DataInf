@@ -4,7 +4,7 @@ We provide a codebase for "[DataInf: Efficiently Estimating Data Influence in Lo
 
 ## Quick start 
 
-### Setup Environment
+### Setup Environment
 
 1. Setup the Conda environment.
   ```
