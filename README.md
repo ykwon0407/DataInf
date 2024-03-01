@@ -5,10 +5,17 @@ We provide a codebase for "[DataInf: Efficiently Estimating Data Influence in Lo
 ## Quick start 
 
 ### Setup Environment
-```
-conda create -n datainf python=3.10
-pip install -r requirements.txt
-```
+
+1. Setup the Conda environment.
+  ```
+  conda create -n datainf python=3.10
+  pip install -r requirements.txt
+  ```
+2. Download the adapters and datasets from Emre Can's Drive.
+3. Create a folder named `adapters` on the same level as `datasets`.
+4. Create another folder named `medical_datasets` under the `datasets` folder.
+5. Place every adapter folder under `adapters` (e.g. `adapters/mistral-lora-sft-only`)
+6. Place all data files under `datasets/medical_datasets` (e.g. `medical_datasets/data.json`, `medical_datasets/umls.json`) 
 
 ### (Task 1) Mislabeled data detection
 

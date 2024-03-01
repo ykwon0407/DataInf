@@ -97,4 +97,5 @@ datasets/
 # *ipynb
 grammars_13bf/
 models/
+adapters/
 
