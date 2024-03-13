@@ -1,14 +1,16 @@
 from tqdm import tqdm
 import pickle
 import torch
+import sys
+import gc
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from transformers import (
     AutoModelForSequenceClassification,
     get_linear_schedule_with_warmup,
     BitsAndBytesConfig,
-    LlamaForCausalLM,
-    LlamaTokenizer
+    AutoModelForCausalLM,
+    AutoTokenizer
 )
 from peft import (
     LoraConfig,
@@ -17,6 +19,9 @@ from peft import (
 )
 from datasets import Dataset
 import evaluate
+
+RANDOM_STATE = 42
+
 
 class LORAEngine(object):
     def __init__(self, 
@@ -132,6 +137,7 @@ class LORAEngine(object):
                 else:
                     pass
             tr_grad_dict[step]=grad_dict
+            gc.collect()
             del grad_dict
             
         val_grad_dict = {}
@@ -162,62 +168,96 @@ class LORAEngine(object):
 class LORAEngineGeneration(object):
     def __init__(self, 
                 base_path,
+                adapter_path,
                 project_path,
-                dataset_name='math_with_reason',
-                device="cuda"):
+                train_dataset_name='GenMedGPT-5k.json',
+                validation_dataset='medicationqa.json',
+                n_train_samples = None,
+                n_val_samples = None,
+                device="cuda",
+                load_in_8bit=False,
+                load_in_4bit=False):
         self.base_path = base_path
         self.project_path = project_path
-        self.adapter_path = f"{self.project_path}/models/math_with_reason_13bf"
-        self.dataset_name = dataset_name
+        self.adapter_path = adapter_path
         self.device=device
-        self.load_pretrained_network()
-        self.load_datasets()
+        self.validation_dataset = self.load_datasets(validation_dataset, n_val_samples)
+        self.train_dataset = self.load_datasets(train_dataset_name, n_train_samples)
+        print(len(self.train_dataset))
+        print(len(self.validation_dataset))
+        print("*"*50)
+        print(self.train_dataset[0])
+        print(self.validation_dataset[0])
+        self.load_pretrained_network(load_in_8bit, load_in_4bit)
 
-    def load_pretrained_network(self):
+    def load_pretrained_network(self, load_in_8bit, load_in_4bit):
         # setup tokenizer
-        self.tokenizer = LlamaTokenizer.from_pretrained(self.base_path)
-        self.tokenizer.padding_side = "right"
+        self.tokenizer = AutoTokenizer.from_pretrained(self.base_path)
+        self.tokenizer.padding_side = "left"
         self.tokenizer.pad_token = self.tokenizer.eos_token
         self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
         # load a base model
-        quantization_config = BitsAndBytesConfig(load_in_8bit=True, load_in_4bit=False)
-        base_model = LlamaForCausalLM.from_pretrained(
+        quantization_config = BitsAndBytesConfig(load_in_8bit= load_in_8bit, load_in_4bit= load_in_4bit)
+        base_model = AutoModelForCausalLM.from_pretrained(
             self.base_path,
             quantization_config=quantization_config,
             torch_dtype=torch.bfloat16,
             offload_folder="offload",
             offload_state_dict=True,
+            
         )
 
         # load a pre-trained model.
         self.model = PeftModel.from_pretrained(base_model, self.adapter_path, is_trainable=True)
+        self.model 
         self.finetuned_config = LoraConfig.from_pretrained(pretrained_model_name_or_path=self.adapter_path)
 
-    def load_datasets(self):
-        self.train_dataset = Dataset.load_from_disk(f"{self.project_path}/datasets/{self.dataset_name}_train.hf")
-        self.validation_dataset = Dataset.load_from_disk(f"{self.project_path}/datasets/{self.dataset_name}_test.hf")
-
+    def load_datasets(self, dataset_name, n_samples):
+        if dataset_name.endswith('.hf'):
+            dataset_ = Dataset.load_from_disk(f"{self.project_path}/datasets/medical_datasets/{dataset_name}")
+        elif dataset_name.endswith('.json'):
+            dataset_ = Dataset.from_json(f"{self.project_path}/datasets/medical_datasets/{dataset_name}")
+        else:
+            raise ValueError("Invalid dataset name")
+        
+        dataset_ = dataset_.shuffle(seed=RANDOM_STATE)
+        
+        # Ensure n_samples does not exceed the dataset size to avoid errors
+        n_samples = min(n_samples, len(dataset_))
+        dataset_ = dataset_.select(range(n_samples))
+    
+        return dataset_
+        
     def create_tokenized_datasets(self):
         tokenize_func = lambda x: self.tokenizer(
-            x["prompt"], truncation=True, padding=True, max_length=128, return_tensors="pt" # text should be more appropritate
+            [instr + "\n" + input_ for instr, input_ in zip(x["instruction"], x["input"])] , 
+            truncation=True, 
+            padding=True, 
+            max_length=256,  # TODDO change into the real size that was used
+            return_tensors="pt" # text should be more appropritate
         ).to(self.device)
 
-        if 'with_reason' in self.dataset_name:
-            column_list=["text", "answer", "variation", "prompt", "reason"]
-        else:
-            column_list=["text", "answer", "variation", "prompt"]
-
+        tokenize_val_func = lambda x: self.tokenizer(
+            x["prompt"] , 
+            truncation=True, 
+            padding=True, 
+            max_length=256, 
+            return_tensors="pt" # text should be more appropritate
+        ).to(self.device)
+        
+        train_column_list= self.train_dataset.column_names
+        val_column_list = self.validation_dataset.column_names
         tokenized_datasets=dict()
         tokenized_datasets["train"] = self.train_dataset.map(
             tokenize_func,
             batched=True,
-            remove_columns=column_list,
+            remove_columns=train_column_list,
         )
         tokenized_datasets["validation"] = self.validation_dataset.map(
-            tokenize_func,
+            tokenize_val_func,
             batched=True,
-            remove_columns=column_list,
+            remove_columns=val_column_list,
         )
         collate_fn = lambda x: self.tokenizer.pad(x, padding="longest", return_tensors="pt")
 
@@ -242,7 +282,7 @@ class LORAEngineGeneration(object):
             outputs = self.model(**batch)
             loss = outputs.loss
             loss.backward()
-            
+    
             grad_dict={}
             for k, v in self.model.named_parameters():
                 if 'lora_A' in k:
@@ -253,6 +293,9 @@ class LORAEngineGeneration(object):
                 else:
                     pass
             tr_grad_dict[step]=grad_dict
+            # print(tr_grad_dict)
+            torch.save(tr_grad_dict, "tenspr.pt")
+            sys.exit()
             del grad_dict
             
         val_grad_dict = {}
