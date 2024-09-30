@@ -11,18 +11,18 @@ We provide a codebase for "[DataInf: Efficiently Estimating Data Influence in Lo
 
 ### (Task 1) Mislabeled data detection
 
-An easy-to-start Jupyter notebook `notebokes/Mislabeled_Data_Detection-RoBERTa-MRPC.ipynb` demonstrates how to compute the influence function values and how to detect mislabeled data points using the computed influence function values. 
+An easy-to-start Jupyter notebook `notebooks/Mislabeled_Data_Detection-RoBERTa-MRPC.ipynb` demonstrates how to compute the influence function values and how to detect mislabeled data points using the computed influence function values. 
  - We use the RoBERTa-large model and [LoRA](https://arxiv.org/abs/2106.09685), a parameter-efficient fine-tuning technique, to significantly reduce the total number of parameters. 
  - We consider a noisy version of the GLUE-MRPC dataset; We synthetically generate mislabeled data points by flipping the label of data points. We randomly selected 20% of data points. 
 
 ### (Task 2) Influential data identification 
-A Jupyter notebook `notebokes/Influential_Data_Identification-Llama2-Math-Reason.ipynb` demonstrates how to efficiently compute the influence function values, showing its applications to identify most influential data points. We use the [llama2-13b-chat](https://huggingface.co/meta-llama/Llama-2-13b-chat-hf). It has thw following steps.
+A Jupyter notebook `notebooks/Influential_Data_Identification-Llama2-Math-Reason.ipynb` demonstrates how to efficiently compute the influence function values, showing its applications to identify most influential data points. We use the [llama2-13b-chat](https://huggingface.co/meta-llama/Llama-2-13b-chat-hf). It has the following steps.
 
 - **Step 1** Dataset generation: generate the `math_problem (with reasoning)` dataset with the following bash command. It will be stored at the `datasets` folder. 
 ```
 python3 src/generate_sentence-math_datasets.py
 ```
-It will generate the `sentence_transformation` and math_problem (withour reasoning) datasets as well.
+It will generate the `sentence_transformation` and math_problem (without reasoning) datasets as well.
 
 - **Step 2** Fine-tune a model: fine-tune a llama-2-13b-chat model on the `math problem (with reasoning)` dataset. We use `src/sft_trainer.py`, which is built on HuggingFace's [SFTTrainer](https://github.com/huggingface/trl/blob/main/examples/scripts/sft.py). A sample CLI is given as follows.
 ```
